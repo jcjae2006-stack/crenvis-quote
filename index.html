@@ -206,11 +206,42 @@ nav{display:flex;gap:3px;flex:1;flex-wrap:wrap;}
 
     <!-- 탭H: 견적 이력 -->
     <div id="tab-h" class="tab">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <div style="font-weight:800;font-size:20px;color:#1a3a6e;">📁 견적 이력</div>
         <div id="hcount" style="font-size:13px;color:#888;"></div>
       </div>
-      <div id="qlist"></div>
+
+      <!-- 기간 필터 + 정렬 -->
+      <div class="card" style="padding:13px 16px;margin-bottom:12px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label style="font-size:12px;color:#666;white-space:nowrap;">기간</label>
+            <input type="date" id="hdf" class="inp" style="width:140px;padding:5px 8px;font-size:12px;" onchange="rH()"/>
+            <span style="font-size:12px;color:#888;">~</span>
+            <input type="date" id="hdt" class="inp" style="width:140px;padding:5px 8px;font-size:12px;" onchange="rH()"/>
+          </div>
+          <select id="hsort" class="inp" onchange="rH()" style="width:130px;padding:5px 8px;font-size:12px;">
+            <option value="date_desc">최신순</option>
+            <option value="date_asc">오래된순</option>
+            <option value="g_desc">견적금액↓</option>
+            <option value="g_asc">견적금액↑</option>
+            <option value="prob_desc">발주확률↓</option>
+            <option value="order_desc">발주금액↓</option>
+          </select>
+          <select id="hfilter" class="inp" onchange="rH()" style="width:110px;padding:5px 8px;font-size:12px;">
+            <option value="all">전체</option>
+            <option value="ordered">발주완료</option>
+            <option value="pending">진행중</option>
+          </select>
+          <button class="bg" onclick="resetHFilter()" style="padding:5px 12px;font-size:12px;">초기화</button>
+        </div>
+      </div>
+
+      <!-- 통계 요약 -->
+      <div id="hstats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px;"></div>
+
+      <!-- 견적 목록 테이블 -->
+      <div id="qlist" style="overflow-x:auto;"></div>
     </div>
 
     <!-- 탭S: 직원관리 -->
@@ -311,6 +342,13 @@ nav{display:flex;gap:3px;flex:1;flex-wrap:wrap;}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ── Supabase 설정 ──
+const SUPA_URL = 'https://jzoypynjntrgfkczkweo.supabase.co';
+const SUPA_KEY = 'sb_publishable_zZ_nXK2WJPxkIioKS2iJyA_fiQoZABF';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+</script>
 <script>
 
 const PRICE_DATA={"TSI": {"rate": 1500.0, "currency": "USD", "products": [{"model": "9303-01", "desc": "Handheld APC, 3 channels, .3/.5/5 µm (.5 ADJ), 0.1 CFM", "price": 3700000, "remark": "Hand held"}, {"model": "9306-V2", "desc": "Handheld APC, 6 channels, 0.3 to 10 µm (ADJ), 0.1 CFM", "price": 6700000, "remark": "Hand held"}, {"model": "9110-01", "desc": "Portable APC, 8 Channels, .1/.15/.2/.25/.3/.5/1/5 µm, 1 CFM", "price": 46100000, "remark": "0.1um"}, {"model": "7110-05", "desc": "Remote APC, 8 Channels, .1/.15/.2/.25/0.3/.5/1/5 µm, 1 CFM", "price": 30700000, "remark": "0.1um"}, {"model": "9001", "desc": "AeroTrak 9001 Water-based Cleanroom Condensation Particle Counter, 1 Channel, 10", "price": 80400000, "remark": "10nm"}, {"model": "7950", "desc": "High Pressure Diffuser, 1-Stage, 0.1 CFM", "price": 6800000, "remark": "Diffuser"}, {"model": "7955", "desc": "High Pressure Diffuser, 2-Stage, 1.0 CFM", "price": 7300000, "remark": "Diffuser"}, {"model": "7960", "desc": "High Pressure Diffuser 1-stage, 1.0 CFM, ≥ 0.3µm - can accommodate 50LPM and 100", "price": 5400000, "remark": "Diffuser"}, {"model": "9510-BD", "desc": "BioTrak Viable Particle Counter, 6 channel 0.5/0.7/1/3/5/10 µm, 1 CFM APC, Viabl", "price": 200000000, "remark": "BioTrak"}, {"model": "A100-31", "desc": "A100+ Portable, 0.3 um, 1 CFM", "price": 19500000, "remark": "New A+ Portable\nA = analog\n(전자)"}, {"model": "A100-51", "desc": "A100+ Portable, 0.5 um, 1 CFM", "price": 19100000, "remark": "New A+ Portable\nA = analog\n(전자)"}, {"model": "A100-31(제약)", "desc": "A100+ Portable, 0.3 um, 1 CFM", "price": 15000000, "remark": "New A+ Portable\nA = analog\n(제약)"}, {"model": "A100-35(제약)", "desc": "A100+ Portable, 0.3 um, 50 LPM", "price": 16500000, "remark": "New A+ Portable\nA = analog\n(제약)"}, {"model": "A100-50(제약)", "desc": "A100+ Portable, 0.5 um, 100 LPM", "price": 16000000, "remark": "New A+ Portable\nA = analog\n(제약)"}, {"model": "A100-51(제약)", "desc": "A100+ Portable, 0.5 um, 1 CFM", "price": 14000000, "remark": "New A+ Portable\nA = analog\n(제약)"}, {"model": "A100-55(제약)", "desc": "A100+ Portable, 0.5 um, 50 LPM", "price": 15800000, "remark": "New A+ Portable\nA = analog\n(제약)"}, {"model": "7201-22003", "desc": "AeroTrak+ Remote APC, .2/.3 um, 0.1 CFM", "price": 6500000, "remark": "Basic\n0.1 cfm"}, {"model": "7201-24010", "desc": "AeroTrak+ Remote APC, .2/.3/.5/1 um, 0.1 CFM,", "price": 7300000, "remark": "Basic\n0.1 cfm"}, {"model": "7301-22005", "desc": "AeroTrak+ Remote APC, .3/.5 um, 0.1 CFM,", "price": 5400000, "remark": "Basic\n0.1 cfm"}, {"model": "7301-24050", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 0.1 CFM,", "price": 6200000, "remark": "Basic\n0.1 cfm"}, {"model": "7301-24100", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 0.1 CFM,", "price": 6200000, "remark": "Basic\n0.1 cfm"}, {"model": "7301-26250", "desc": "AeroTrak+ Remote APC, .3/.5/1/5/10/25 um, 0.1 CFM,", "price": 6600000, "remark": "Basic\n0.1 cfm"}, {"model": "7501-22050", "desc": "AeroTrak+ Remote APC, .5/5 um, 0.1 CFM", "price": 4500000, "remark": "Basic\n0.1 cfm"}, {"model": "7501-24100", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 0.1 CFM", "price": 5200000, "remark": "Basic\n0.1 cfm"}, {"model": "7501-24250", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 0.1 CFM", "price": 5200000, "remark": "Basic\n0.1 cfm"}, {"model": "7501-25250", "desc": "AeroTrak+ Remote APC, .5/1/5/10/25 um, 0.1 CFM", "price": 5500000, "remark": "Basic\n0.1 cfm"}, {"model": "7310-22005", "desc": "AeroTrak+ Remote APC, .3/.5 um, 1 CFM", "price": 6700000, "remark": "Basic\n1 cfm"}, {"model": "7310-24100", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 1 CFM", "price": 7500000, "remark": "Basic\n1 cfm"}, {"model": "7310-24050", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 1 CFM", "price": 7500000, "remark": "Basic\n1 cfm"}, {"model": "7510-22050", "desc": "AeroTrak+ Remote APC, .5/5 um, 1 CFM", "price": 5400000, "remark": "Basic\n1 cfm"}, {"model": "7510-22050V", "desc": "AeroTrak+ Remote APC, .5/5 um, 1 CFM, VHP Resistant", "price": 7500000, "remark": "Basic\n1 cfm"}, {"model": "7510-24100", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 1 CFM,", "price": 6700000, "remark": "Basic\n1 cfm"}, {"model": "7510-24250", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 1 CFM", "price": 6700000, "remark": "Basic\n1 cfm"}, {"model": "6201-24010", "desc": "AeroTrak+ Remote APC with Pump .2/.3/.5/1 um, 0.1 CFM", "price": 8400000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "6301-24100", "desc": "AeroTrak+ Remote APC with Pump .3/.5/5/10 um, 0.1 CFM", "price": 8000000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "6301-26250", "desc": "AeroTrak+ Remote APC with Pump .3/.5/1/5/10/25 um, 0.1 CFM", "price": 8300000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "6501-24100", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10 um, 0.1 CFM,", "price": 7600000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "6501-24250", "desc": "AeroTrak+ Remote APC with Pump .5/5/10/25 um, 0.1 CFM", "price": 7600000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "6501-25250", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10/25 um, 0.1 CFM", "price": 7800000, "remark": "W/ pump\nBasic\n0.1 cfm"}, {"model": "7201-24010A", "desc": "AeroTrak+ Remote APC, .2/.3/.5/1 um, 0.1 CFM, 4-20mA 2CH Analog Output (Selectab", "price": 7300000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7301-24050A", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 0.1 CFM, 4-20mA 2CH Analog Output (Selectabl", "price": 6200000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7301-24100A", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 0.1 CFM, 4-20mA 2CH Analog Output (Selectab", "price": 6200000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7301-26250A", "desc": "AeroTrak+ Remote APC, .3/.5/1/5/10/25 um, 0.1 CFM, 4-20mA 2CH Analog Output (Sel", "price": 6600000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7501-24100A", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 0.1 CFM, 4-20mA 2CH Analog Output (Selectabl", "price": 5200000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7501-24250A", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 0.1 CFM, 4-20mA 2CH Analog Output (Selectab", "price": 5200000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7501-25250A", "desc": "AeroTrak+ Remote APC, .5/1/5/10/25 um, 0.1 CFM, 4-20mA 2CH Analog Output (Select", "price": 5500000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7310-24100A", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 1 CFM, 4-20mA 2CH Analog Output (Selectable", "price": 7500000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7510-24100A", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 1 CFM, 4-20mA 2CH Analog Output (Selectable)", "price": 6000000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7510-24250A", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 1 CFM, 4-20mA 2CH Analog Output (Selectable", "price": 6700000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7310-24050A", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 1 CFM, 4-20mA 2CH Analog Output (Selectable)", "price": 7500000, "remark": "Analogue Output\n0.1 cfm"}, {"model": "7201-22003W", "desc": "AeroTrak+ Remote APC, .2/.3 um, 0.1 CFM, Wireless Enabled", "price": 6700000, "remark": "Wireless\n0.1 cfm"}, {"model": "7201-24010W", "desc": "AeroTrak+ Remote APC, .2/.3/.5/1 um, 0.1 CFM, Wireless Enabled", "price": 7500000, "remark": "Wireless\n0.1 cfm"}, {"model": "7301-24100W", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 0.1 CFM, Wireless Enabled", "price": 6400000, "remark": "Wireless\n0.1 cfm"}, {"model": "7301-26250W", "desc": "AeroTrak+ Remote APC, .3/.5/1/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 6800000, "remark": "Wireless\n0.1 cfm"}, {"model": "7501-22050W", "desc": "AeroTrak+ Remote APC, .5/5 um, 0.1 CFM, Wireless Enabled", "price": 4700000, "remark": "Wireless\n0.1 cfm"}, {"model": "7501-24100W", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 0.1 CFM, Wireless Enabled", "price": 5500000, "remark": "Wireless\n0.1 cfm"}, {"model": "7501-24250W", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 5500000, "remark": "Wireless\n0.1 cfm"}, {"model": "7501-25250W", "desc": "AeroTrak+ Remote APC, .5/1/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 5700000, "remark": "Wireless\n0.1 cfm"}, {"model": "7310-24100W", "desc": "AeroTrak+ Remote APC, .3/.5/5/10 um, 1 CFM, Wireless Enabled", "price": 7700000, "remark": "Wireless\n0.1 cfm"}, {"model": "7301-22005W", "desc": "AeroTrak+ Remote APC, .3/.5 um, 0.1 CFM, Wireless Enabled", "price": 5600000, "remark": "Wireless\n0.1 cfm"}, {"model": "7301-24050W", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 0.1 CFM, Wireless Enabled", "price": 6400000, "remark": "Wireless\n0.1 cfm"}, {"model": "7310-22005W", "desc": "AeroTrak+ Remote APC, .3/.5 um, 1 CFM, Wireless Enabled", "price": 6900000, "remark": "Wireless\n0.1 cfm"}, {"model": "7310-24050W", "desc": "AeroTrak+ Remote APC, .3/.5/1/5 um, 1 CFM, Wireless Enabled", "price": 7700000, "remark": "Wireless\n0.1 cfm"}, {"model": "7510-22050W", "desc": "AeroTrak+ Remote APC, .5/5 um, 1 CFM, Wireless Enabled", "price": 6200000, "remark": "Wireless\n0.1 cfm"}, {"model": "7510-24100W", "desc": "AeroTrak+ Remote APC, .5/1/5/10 um, 1 CFM, Wireless Enabled", "price": 6900000, "remark": "Wireless\n0.1 cfm"}, {"model": "7510-24250W", "desc": "AeroTrak+ Remote APC, .5/5/10/25 um, 1 CFM, Wireless Enabled", "price": 6900000, "remark": "Wireless\n0.1 cfm"}, {"model": "6310", "desc": "Remote APC with Pump .3/.5/.7/1 µm, 1 CFM, 4-20 mA 2CH Analog Output (Selectable", "price": 13500000, "remark": "W/ pump\n1 cfm"}, {"model": "6510", "desc": "Remote APC with Pump .5/.7/1/5 µm, 1 CFM, 4-20 mA 2CH Analog Output (Selectable)", "price": 11900000, "remark": "W/ pump\n1 cfm"}, {"model": "6510-VHP", "desc": "Remote APC with Pump .5/.7/1/5 µm, 1 CFM, 4-20 mA 2CH Analog Output (Selectable)", "price": 13500000, "remark": "W/ pump\n1 cfm"}, {"model": "6201-24010A", "desc": "AeroTrak+ Remote APC with Pump .2/.3/.5/1 um, 0.1 CFM, 4-20 mA 2CH Analog Output", "price": 8400000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6301-24100A", "desc": "AeroTrak+ Remote APC with Pump .3/.5/5/10 um, 0.1 CFM, 4-20 mA 2CH Analog Output", "price": 8000000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6301-26250A", "desc": "AeroTrak+ Remote APC with Pump .3/.5/1/5/10/25 um, 0.1 CFM, 4-20 mA 2CH Analog O", "price": 8300000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6501-24250A", "desc": "AeroTrak+ Remote APC with Pump .5/5/10/25 um, 0.1 CFM, 4-20 mA 2CH Analog Output", "price": 7600000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6501-25250A", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10/25 um, 0.1 CFM, 4-20 mA 2CH Analog Outp", "price": 7800000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6501-24100A", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10 um, 0.1 CFM, 4-20 mA 2CH Analog Output ", "price": 7600000, "remark": "W/ pump\n0.1 cfm\nAnalogue output"}, {"model": "6201-24010W", "desc": "AeroTrak+ Remote APC with Pump .2/.3/.5/1 um, 0.1 CFM, Wireless Enabled", "price": 8600000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "6301-24100W", "desc": "AeroTrak+ Remote APC with Pump .3/.5/5/10 um, 0.1 CFM, Wireless Enabled", "price": 8200000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "6301-26250W", "desc": "AeroTrak+ Remote APC with Pump .3/.5/1/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 8500000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "6501-25250W", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 8000000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "6501-24250W", "desc": "AeroTrak+ Remote APC with Pump .5/5/10/25 um, 0.1 CFM, Wireless Enabled", "price": 7800000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "6501-24100W", "desc": "AeroTrak+ Remote APC with Pump .5/1/5/10 um, 0.1 CFM, Wireless Enabled", "price": 7800000, "remark": "W/ pump\n0.1 cfm\nWireless"}, {"model": "7010-090-1V", "desc": "nan", "price": 5700000, "remark": "AAS"}, {"model": "FMS-BASE-X", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, up to 2 Sample Points. Includes: S", "price": 6500000, "remark": "FMS"}, {"model": "FMS-BASE-BM", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, Batch Manager, up to 2 Sample Poin", "price": 10500000, "remark": "FMS"}, {"model": "FMS-10SP-X", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, up to 10 Sample Points. Includes: ", "price": 9400000, "remark": "FMS"}, {"model": "FMS-10SP-BM", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, Batch Manager, up to 10 Sample Poi", "price": 13400000, "remark": "FMS"}, {"model": "FMS-50SP-X", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, up to 50 Sample Points. Includes: ", "price": 13700000, "remark": "FMS"}, {"model": "FMS-50SP-BM", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, Batch Manager, up to 50 Sample Poi", "price": 16000000, "remark": "FMS"}, {"model": "FMS-100SP-X", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, up to 100 Sample Points. Includes:", "price": 23300000, "remark": "FMS"}, {"model": "FMS-100SP-BM", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, Batch Manager<(>,<)> up to 100 Sam", "price": 24500000, "remark": "FMS"}, {"model": "FMS-UNLSP-X", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, unlimited Sample Points. Includes:", "price": 143800000, "remark": "FMS"}, {"model": "FMS-UNL-BM", "desc": "FMS Software:1 Client, 1 PostgreSQL Database, Batch Manager, unlimited Sample Po", "price": 143800000, "remark": "FMS"}, {"model": "FMS-BUD-1", "desc": "FMS Buddy Monitor:1 Client, 1 PostgreSQL Database, 1 Sample Point. Includes: Sof", "price": 6100000, "remark": "FMS"}, {"model": "FMS-CL-X", "desc": "FMS Client: Includes: Software License Key for 1 Client.", "price": 2300000, "remark": "FMS"}, {"model": "FMS-CL-BM", "desc": "FMS Client: With Batch Manger. Includes: Software License Key for 1 x Client.", "price": 2800000, "remark": "FMS"}, {"model": "FMS-50SP-OPCSVR", "desc": "FMS Software :1 OPC UA Server, 1 Client, 1 PostgreSQL Database, Batch Manager, u", "price": 24100000, "remark": "OPC UA Server"}, {"model": "FMS-100SP-OPCSVR", "desc": "FMS Software :1 OPC UA Server, 1 Client, 1 PostgreSQL Database, Batch Manager, u", "price": 32900000, "remark": "OPC UA Server"}, {"model": "FMS-UNL-OPCSVR", "desc": "FMS Software :1 OPC UA Server, 1 Client, 1 PostgreSQL Database, Batch Manager, u", "price": 143800000, "remark": "OPC UA Server"}, {"model": "FMS-CL-OPCSVR", "desc": "FMS Client with Batch Manager : For use when OPC UA server configuration and con", "price": 3300000, "remark": "OPC UA Server"}, {"model": "FMS-BUD-OPCSVR", "desc": "FMS Buddy Monitor Software :1 OPC UA Server, 1 Client, 1 PostgreSQL Database, 1 ", "price": 16000000, "remark": "OPC UA Server"}, {"model": "FMS-BASE-UPG", "desc": "FMS Software Upgrade to latest FMS release :1 Client, 1 PostgreSQL Database, up ", "price": 3400000, "remark": "Program \nUpgrade"}, {"model": "FMS-BASE-BM-UPG", "desc": "FMS Software Upgrade to latest FMS release :1 Client, 1 PostgreSQL Database, Bat", "price": 5200000, "remark": "Program \nUpgrade"}, {"model": "FMS-10SP-UPG", "desc": "FMS Software Upgrade to latest FMS release:1 Client, 1 PostgreSQL Database, up t", "price": 4300000, "remark": "Program \nUpgrade"}, {"model": "FMS-10SP-BM-UPG", "desc": "FMS Software Upgrade to latest FMS release:1 Client, 1 PostgreSQL Database, Batc", "price": 6200000, "remark": "Program \nUpgrade"}, {"model": "FMS-50SP-UPG", "desc": "FMS Software Upgrade to latest FMS release :1 Client, 1 PostgreSQL Database, up ", "price": 7000000, "remark": "Program \nUpgrade"}, {"model": "FMS-50SP-BM-UPG", "desc": "FMS Software Upgrade to latest FMS release :1 Client, 1 PostgreSQL Database, Bat", "price": 8800000, "remark": "Program \nUpgrade"}, {"model": "FMS-100SP-UPG", "desc": "FMS Software Upgrade to latest FMS release: 1 Client, 1 PostgreSQL Database, up ", "price": 11700000, "remark": "Program \nUpgrade"}, {"model": "FMS-100SP-BM-UPG", "desc": "FMS Software Upgrade to latest FMS release :1 Client, 1 PostgreSQL Database, Bat", "price": 13700000, "remark": "Program \nUpgrade"}, {"model": "FMS-UNLSP-UPG", "desc": "FMS Software Upgrade to latest FMS release:1 Client, 1 PostgreSQL Database, unli", "price": 143800000, "remark": "Program \nUpgrade"}, {"model": "FMS-UNL-BM-UPG", "desc": "FMS Software Upgrade to latest FMS release: 1 Client, 1 PostgreSQL Database, Bat", "price": 143800000, "remark": "Program \nUpgrade"}, {"model": "FMS-CL-UPG", "desc": "FMS Client Upgrade to latest FMS release: Includes: Software License Key for 1 C", "price": 1300000, "remark": "Program \nUpgrade"}, {"model": "FMS-CL-BM-UPG", "desc": "FMS Client Upgrade to latest FMS release: With Batch Manager. Includes:Software ", "price": 1500000, "remark": "Program \nUpgrade"}, {"model": "FMS-BUD-1-UPG", "desc": "FMS Buddy Monitor Software Upgrade to latest FMS release Includes :1 Client, 1 P", "price": 3200000, "remark": "Program \nUpgrade"}, {"model": "FMS-EXP-X", "desc": "FMS Software Expansion for older versions: Includes: License Key/s for all softw", "price": 143800000, "remark": "Program \nUpgrade"}, {"model": "FMS-50-OPCSVR-UPG", "desc": "FMS Software Upgrade to latest FMS release: 1 OPC UA Server, 1 Client, 1 Postgre", "price": 12000000, "remark": "OPC UA Server\nUpgrade"}, {"model": "FMS-100-OPCSVR-UPG", "desc": "FMS Software Upgrade to latest FMS release: 1 OPC UA Server, 1 Client, 1 Postgre", "price": 16600000, "remark": "OPC UA Server\nUpgrade"}, {"model": "FMS-UNL-OPCSVR-UPG", "desc": "FMS Software Upgrade to latest FMS release: 1 OPC UA Server, 1 Client, 1 Postgre", "price": 143800000, "remark": "OPC UA Server\nUpgrade"}, {"model": "FMS-CL-OPCSVR-UPG", "desc": "FMS Client Upgrade to latest FMS release with Batch Manager: For use when OPC UA", "price": 1800000, "remark": "OPC UA Server\nUpgrade"}, {"model": "FMS-BUD-OPCSVR-UPG", "desc": "FMS Buddy Monitor Software Upgrade to latest FMS release Includes: 1 OPC UA Serv", "price": 8100000, "remark": "OPC UA Server\nUpgrade"}, {"model": "OPCUA-BRIDGE-5SP", "desc": "1 OPC UA Client Server, Enables OPC UA interface for up to 5 X Data Points from ", "price": 10100000, "remark": "OPC UA Bridge"}, {"model": "OPCUA-BRIDGE-10SP", "desc": "1 OPC UA Client Server, Enables OPC UA interface for up to 10 X Data Points from", "price": 11500000, "remark": "OPC UA Bridge"}, {"model": "OPCUA-BRIDGE-25SP", "desc": "1 OPC UA Client Server, Enables OPC UA interface for up to 25 X Data Points from", "price": 14100000, "remark": "OPC UA Bridge"}, {"model": "4040", "desc": "Flowmeter, 300 L/min, Air, O2, N2, 22mm", "price": 2500000, "remark": "4000 series"}, {"model": "4043", "desc": "Flowmeter, 200 L/min, Air, O2, N2, 1/2 inch", "price": 2500000, "remark": "4000 series"}, {"model": "4045", "desc": "Flowmeter, 300 L/min, Air, O2, N2 3/4 inch", "price": 2500000, "remark": "4000 series"}, {"model": "4140", "desc": "Flowmeter, 20 L/min, Air, O2, N2, 1/4 inch", "price": 2400000, "remark": "4000 series"}, {"model": "4143", "desc": "Flowmeter, 20 L/min, Air, O2, N2, 3/8 inch", "price": 2400000, "remark": "4000 series"}, {"model": "41403", "desc": "Flowmeter, 20 L/min, N2O, Air, O2, N2, 1/4 inch", "price": 2550000, "remark": "4000 series"}, {"model": "41433", "desc": "Flowmeter, 20 L/min, N2O, Air, O2, N2, 3/8 inch", "price": 2550000, "remark": "4000 series"}, {"model": "40401", "desc": "Flowmeter, 300 L/min, Air, 22mm", "price": 2500000, "remark": "4000 series"}, {"model": "41401", "desc": "Flowmeter, 20 L/min, Air, 1/4 inch", "price": 2300000, "remark": "4000 series"}, {"model": "5300-1", "desc": "Flowmeter Kit, 300 L/min, Air, N2, 22mm and 1/2 inch tube ends", "price": 2500000, "remark": "5000 series"}, {"model": "5300-2", "desc": "Flowmeter Kit, 300 L/min, Air, O2, N2, 22mm and 1/2 inch tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5300-3", "desc": "Flowmeter Kit, 300 L/min, Air, CO2, N2, 22mm and 1/2 inch tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5300-4", "desc": "Flowmeter Kit, 300 L/min, O2, 22mm and 1/2 inch tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5300-5", "desc": "Flowmeter Kit, 300 L/min, CO2, 22mm and 1/2 tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5310-1", "desc": "Flowmeter + DP Kit, 300 L/min, Air, N2, 22mm and 1/2 inch tube ends", "price": 2900000, "remark": "5000 series"}, {"model": "5310-2", "desc": "Flowmeter +DP Kit, 300 L/min, Air, O2, N2, 22mm and 1/2 inch ends", "price": 3000000, "remark": "5000 series"}, {"model": "5310-3", "desc": "Flowmeter +DP Kit, 300 L/min, Air, CO2, N2, 22mm and 1/2 inch ends", "price": 3000000, "remark": "5000 series"}, {"model": "5310-4", "desc": "Flowmeter + DP Kit, 300 L/Min, O2, 22mm and 1/2 inch tube ends", "price": 3000000, "remark": "5000 series"}, {"model": "5310-5", "desc": "Flowmeter + DP Kit, 300 L/min, CO2, 22mm and 1/2 inch tube ends", "price": 3000000, "remark": "5000 series"}, {"model": "5320-2", "desc": "Flowmeter +DP +%RH Kit, 300 L/min, Air, O2, N2, 22mm 1/2 inch ends", "price": 3400000, "remark": "5000 series"}, {"model": "5330-2", "desc": "Flowmeter +DP +%RH +HIGH ACC Kit, 300 L/min, Air, O2, N2, 22mm and 1/2 inch tube", "price": 3700000, "remark": "5000 series"}, {"model": "5303-2", "desc": "Flowmeter +WIDE ACC Kit, 300 L/min, Air, O2, N2, 22mm and 1/2 inch tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5200-1", "desc": "Flowmeter Kit, 30 L/Min, Air, N2, 3/8 Inch 1/4 Inch and 10mm Tube Ends", "price": 2500000, "remark": "5000 series"}, {"model": "5200-2", "desc": "Flowmeter Kit, 30 L/min, Air, O2, N2, 3/8 inch 1/4 inch 10mm tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5200-3", "desc": "Flowmeter Kit, 30 L/min, Air, CO2, N2, 3/8 inch 1/4 inch 10mm ends", "price": 2600000, "remark": "5000 series"}, {"model": "5200-6", "desc": "Flowmeter Kit, 30 L/min, O2, 3/8 inch 1/4 inch and 10mm tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5200-7", "desc": "Flowmeter Kit, 30 L/min, CO2, 3/8 inch 1/4 inch and 10mm tube ends", "price": 2600000, "remark": "5000 series"}, {"model": "5210-1", "desc": "Flowmeter +DP Kit, 30 L/min, Air, N2, 3/8 inch 1/4 inch 10mm tube ends", "price": 2900000, "remark": "5000 series"}, {"model": "5210-2", "desc": "Flowmeter +DP Kit, 30 L/min, Air, O2, N2, 3/8 inch 1/4 inch 10mm ends", "price": 3000000, "remark": "5000 series"}, {"model": "5210-3", "desc": "Flowmeter +DP Kit, 30 L/min, Air, CO2, N2, 3/8 inch 1/4 inch 10mm", "price": 3000000, "remark": "5000 series"}, {"model": "5210-6", "desc": "Flowmeter +DP Kit, 30 L/min, O2, 3/8 inch 1/4 inch and 10mm tube ends", "price": 3000000, "remark": "5000 series"}, {"model": "5210-7", "desc": "Flowmeter +DP Kit, 30 L/min, CO2, 3/8 inch 1/4 inch and 10mm ends", "price": 3000000, "remark": "5000 series"}, {"model": "5220-2", "desc": "Flowmeter +DP +%RH Kit, 30 L/min, Air, O2, N2, 3/8 1/4 inch 10mm", "price": 3400000, "remark": "5000 series"}, {"model": "5230-2", "desc": "Flowmeter +DP +%RH +HIGH ACC Kit, 30 L/min, Air, O2, N2, 3/8 inch 1/4 inch and 1", "price": 3700000, "remark": "5000 series"}, {"model": "5203-2", "desc": "Flowmeter +WIDE ACC Kit, 30 L/min, Air, O2, N2, 3/8 inch 1/4 inch and 10mm tube ", "price": 2600000, "remark": "5000 series"}]}, "LAZIN": {"rate": 10.0, "currency": "JPY", "products": [{"model": "LODAS™-BI8", "desc": "100nm Photo Mask (Blanks) 6 Inch", "price": 461600000, "remark": "BI8"}, {"model": "LODAS™-BI12", "desc": "200nm Glass Wafer (12,8,6 Inch)", "price": 923100000, "remark": "BI12"}, {"model": "LODAS™-BI12", "desc": "200nm (Main Frame,FFU,Pneumatic Vibration Isolator 제외) Glass Wafer (12,8,6 Inch)", "price": 723100000, "remark": "BI12"}, {"model": "Software", "desc": "Auto Loader System Software", "price": 200000000, "remark": "BI12"}, {"model": "LODAS™-AI12", "desc": "Automation System 200nm Open cassette (up to 10), 1500 * 900* 1800mm", "price": 1615400000, "remark": "AI 12"}, {"model": "LODAS™-AI 50", "desc": "Automation System 200nm Sensitivity (Internal 0.5um 옵션 포함) Open cassette (up to ", "price": 1615400000, "remark": "AI 50"}, {"model": "LODAS™-AI 100", "desc": "Automation System 100nm Sensitivity Open cassette (up to 10), 1500 * 1000* 1800m", "price": 1307700000, "remark": "AI 100"}, {"model": "LODAS™-AI Full", "desc": "Automation System 100nm Sensitivity Open cassette (up to 10) 1500 * 1000* 1800mm", "price": 1615400000, "remark": "AI Full"}]}, "Ametek Mocon": {"rate": 1500.0, "currency": "USD", "products": [{"model": "NS91-BTEXPPN", "desc": "Baseline® 9100 GC Gas Analyzer Benzene; Ethanol; PGME, PGMEA; Toluene, Ethylbenz", "price": 87400000, "remark": "PGME, PPGMEA"}, {"model": "038-1", "desc": "CHA-THA Total Hydrocarbon Analyzer TOTAL HYDROCARBONS IN A NON-CONDENSING SAMPLE", "price": 25600000, "remark": "CHA-THA"}, {"model": "038-2", "desc": "1 POINT MNME w/ MANUAL CAL, NO PUMP AMBIENT METHANE AND NONMETHANE HYDROCARBONS ", "price": 36300000, "remark": "CHA-MNME"}, {"model": "038-3", "desc": "1 POINT TCA w/ MANUAL CALBRATION, NO PUMP IMPURITES IN N2, H2, AR OR HE FOR TOTA", "price": 39500000, "remark": "CHA-TCA"}, {"model": "001-551", "desc": "1 POINT MNME w/ MANUAL CAL, PUMP AMBIENT METHANE AND NONMETHANE HYDROCARBONS UP ", "price": 30900000, "remark": "MNME"}, {"model": "NS91-HSTV", "desc": "TVOC, IPA, ACETONE IN A NON-CONDENSING SAMPLE, PRE-FILTERED TO <1 MICRONS Photoi", "price": 79400000, "remark": "TVOC"}, {"model": "NS91-TVAI", "desc": "TVOC, IPA, ACETONE IN A NON-CONDENSING SAMPLE, PRE-FILTERED TO <1 MICRONS Photoi", "price": 68900000, "remark": "TVOC"}]}, "AMIRA": {"rate": 1750.0, "currency": "EUR", "products": [{"model": "PABIO003070002", "desc": "Bioreset PLUS V2  V-PHP generator - 21 CFR", "price": 90900000, "remark": "BioReset PLUS"}, {"model": "PABIO005110001", "desc": "Optional H2O2 PPM probe for Bioreset PLUS models", "price": 6800000, "remark": "BioReset PLUS"}, {"model": "PABIO002010001", "desc": "Bioreset PRO V-PHP generator", "price": 50500000, "remark": "BioReset PRO"}, {"model": "PABIO008010001", "desc": "Bioreset PRO-V V-PHP generator", "price": 57700000, "remark": "BioReset PRO"}, {"model": "PABIO001010001", "desc": "Bioreset SMART V-PHP generator", "price": 38400000, "remark": "BioReset Smart"}, {"model": "PABIO001010002", "desc": "Bioreset SMART V2 V-PHP generator", "price": 56600000, "remark": "BioReset Smart"}, {"model": "PABIO001010002", "desc": "Trolley 필수(Balance 사용해야함)", "price": 11800000, "remark": "BioReset Smart"}, {"model": "PABIO009010001", "desc": "Bioreset MAX V-PHP generator", "price": 30700000, "remark": "BioReset Max"}, {"model": "PABIO004080002", "desc": "Catalyst for Bioreset MAX", "price": 15700000, "remark": "BioReset Max"}, {"model": "PVEAS350010001", "desc": "Easypass - laminar flow trolley with VHP generator on board", "price": 204100000, "remark": "EasyPass"}, {"model": "PVEAS351010001", "desc": "Easypass - Interface", "price": 37200000, "remark": "EasyPass"}]}, "Microrite": {"rate": 1500.0, "currency": "USD", "products": [{"model": "TPG-M2", "desc": "Fog generator", "price": 16000000, "remark": "Fogger"}, {"model": "Man-Pro", "desc": "Manifold system professional", "price": 10760000, "remark": "Manifold"}, {"model": "Man-Bsc", "desc": "Manifold system BSC", "price": 4030000, "remark": "Manifold"}, {"model": "Man-Iso", "desc": "Manifold system Isolator", "price": 20740000, "remark": "Manifold"}, {"model": "TPS-LD", "desc": "Solution Long Duration", "price": 310000, "remark": "Solution"}, {"model": "TPS-MD", "desc": "Solution Medium Duration", "price": 310000, "remark": "Solution"}, {"model": "TPS-SD", "desc": "Solution Short Duration", "price": 310000, "remark": "Solution"}]}, "EMTEK": {"rate": 1500.0, "currency": "USD", "products": [{"model": "P100.PACK.CMP", "desc": "P100 Portable Microbial Air Sampler Complete Package", "price": 6230000, "remark": "P100"}, {"model": "P100.PACK.BASIC", "desc": "P100 Portable Microbial Air Sampler Basic Package", "price": 5610000, "remark": "P100"}, {"model": "P100.CMPGAS.KIT", "desc": "P100 Compressed Air/Gas Monitoring Kit (100 LPM)", "price": 2700000, "remark": "P100"}, {"model": "P100.CMPGAS.KIT.28.3/50\nP100.CMPGAS.KIT.75/100", "desc": "P100 Compressed Air/Gas Monitoring Kit (100 LPM)", "price": 2700000, "remark": "Diffuser"}, {"model": "P100ss.PACK.CMP", "desc": "P100ss - Full 316 Stainless Steel - Portable Microbial Air Sampler Complete Pack", "price": 7320000, "remark": "P100SS"}, {"model": "P100ss.PACK.BASIC", "desc": "P100ss Portable Microbial Air Sampler Basic Package", "price": 6680000, "remark": "P100SS"}, {"model": "R100.PACK.SS.28 / R100.PACK.SS.100", "desc": "R100 REMOTE AIR SAMPLING PACKAGE - 316SS REMOTE AIR SAMPLER (RAS)", "price": 7350000, "remark": "R100"}, {"model": "R100.PACK.AA.28 / R100.PACK.AA.100", "desc": "R100 REMOTE AIR SAMPLER - COMPLETE PACKAGE - ANODIZED ALUMINUM (AA)RAS", "price": 6430000, "remark": "R100"}, {"model": "R100.CONTROLLER", "desc": "R100 Controller", "price": 5170000, "remark": "R100"}, {"model": "V100.R2S.PACK", "desc": "V100 Controller and R2S Air Sampler - Complete Package Pricing", "price": 12940000, "remark": "V100"}, {"model": "V100.R2SX2.PACK", "desc": "V100 Controller and Two (2) R2S Air Sampler - Complete Package Pricing", "price": 15580000, "remark": "V100"}, {"model": "V100.RAS.PACK", "desc": "V100 Controller and P100 Remote Air Sampler (RAS) Air Sampler Complete Package", "price": 12100000, "remark": "V100"}, {"model": "V100.RASX2.PACK", "desc": "V100 Controller and P100 Remote Air Sampler (RAS) Air Sampler Complete Package", "price": 13860000, "remark": "V100"}, {"model": "V100.RASX3.PACK", "desc": "V100 Controller and P100 Remote Air Sampler (RAS) Air Sampler Complete Package", "price": 15560000, "remark": "V100"}, {"model": "V100.RASX4.PACK", "desc": "V100 Controller and P100 Remote Air Sampler (RAS) Air Sampler Complete Package", "price": 17270000, "remark": "V100"}, {"model": "V100.RCG.PACK", "desc": "V100 Controller and RCG Compressed Air Sampler Complete Package Pricing Schedule", "price": 15310000, "remark": "V100"}, {"model": "V100.01(R2S또는 RAS 사야함)", "desc": "V100 Air Sampler Controller:", "price": 10200000, "remark": "V100"}]}, "GTI": {"rate": 1500.0, "currency": "USD", "products": [{"model": "3990", "desc": "3990 photometer, 220V volt, Scanning Probe, Carrying Case", "price": 12300000, "remark": "Photometer"}, {"model": "3991", "desc": "3991 photometer, 220V volt, Scanning Probe, Carrying Case", "price": 16800000, "remark": "Photometer"}, {"model": "3990-01", "desc": "3990-01, Six Nozzle Laskin Style Aerosol Generator", "price": 3430000, "remark": "Generator"}, {"model": "3990-02", "desc": "3990-02, Thermal Aerosol Generator 220V", "price": 6450000, "remark": "Generator"}, {"model": "3990-03", "desc": "3990-03, Laskin Style Aerosol Generator 220V", "price": 5930000, "remark": "Generator"}, {"model": "PAO-10L", "desc": "PAO-10L", "price": 1000000, "remark": "PAO"}, {"model": "PAO-20L", "desc": "PAO-20L", "price": 1300000, "remark": "PAO"}, {"model": "GTl 135", "desc": "nan", "price": 700000, "remark": "Digital Fine DifferentialPressure Sensor"}, {"model": "GTI 145", "desc": "nan", "price": 700000, "remark": "Digital Fine DifferentialPressure Sensor"}, {"model": "GTI610", "desc": "Capture Hood GTI610", "price": 2900000, "remark": "Capture Hood"}, {"model": "GTI620", "desc": "Capture Hood GTI620 with Bluetooth", "price": 4600000, "remark": "Capture Hood"}, {"model": "GTI620-DP  Grid", "desc": "Velocity Grid Kit GTI620-DP Grid", "price": 3700000, "remark": "Capture Hood"}, {"model": "GTI620-DP", "desc": "Micromanometer GTI620-DP", "price": 2900000, "remark": "Capture Hood"}, {"model": "GTI600", "desc": "GTI 600, Rotating Vane Anemometer", "price": 1400000, "remark": "Anemometer"}, {"model": "GTI115", "desc": "GTI 115, Handheld Micro-manometer", "price": 1200000, "remark": "Micro-manometer"}, {"model": "DALT 6910", "desc": "DALT 6910, Duct Air Leakage Tester", "price": 11100000, "remark": "Duct Air Leakage Tester"}, {"model": "GTI650", "desc": "GTI650, Blower Door System", "price": 11100000, "remark": "Blower Door System"}, {"model": "GTI658", "desc": "GTI658, Blower Door System", "price": 13300000, "remark": "Blower Door System"}]}, "STERENE": {"rate": 1500.0, "currency": "USD", "products": [{"model": "GGL500-AF", "desc": "Sterene Autoclavable Goggles", "price": 63000, "remark": "Goggle"}]}};
@@ -345,27 +383,122 @@ let emps = JSON.parse(localStorage.getItem('crv_emps')||'null') || [
 ];
 let cu = JSON.parse(sessionStorage.getItem('crv_cu')||'null');
 
-function saveEmps(){localStorage.setItem('crv_emps',JSON.stringify(emps));}
+function saveEmps(){
+  localStorage.setItem('crv_emps',JSON.stringify(emps));
+  // Supabase에도 동기화
+  emps.forEach(async e => {
+    await sb.from('employees').upsert({
+      emp_no: e.empNo, name: e.name, email: e.email,
+      dept: e.dept||'', phone: e.phone||'', pw: e.pw||'',
+      is_admin: e.isAdmin||false
+    }, {onConflict:'email'});
+  });
+}
 
 // 데이터 저장/불러오기
 function save(){
+  // 로컬 백업
   try{
     localStorage.setItem('crv_qs', JSON.stringify(qs));
     localStorage.setItem('crv_xc', JSON.stringify(custs.filter(c=>c.id>2935)));
-    localStorage.setItem('crv_xp', JSON.stringify(prods.filter(p=>p._custom)));
     localStorage.setItem('crv_xr', JSON.stringify(xr));
   }catch(e){}
 }
+
+// ── Supabase DB 함수들 ──
+async function dbSaveQuote(q){
+  const {error} = await sb.from('quotes').upsert({
+    id: q.id, cust: q.cust, items: q.items,
+    disc: q.disc||0, da: q.da||0, sub: q.sub||0,
+    sup: q.sup||0, vat: q.vat||0, g: q.g||0,
+    date: q.date, exp: q.exp, note: q.note||'',
+    by_name: q.by||'', sender: q.sender||{},
+    prob: q.prob||0, exp_order: q.expOrder||'',
+    final_amt: q.finalAmt||0, order_amt: q.orderAmt||0
+  });
+  if(error) console.error('견적 저장 오류:', error);
+}
+
+async function dbDeleteQuote(id){
+  await sb.from('quotes').delete().eq('id', id);
+}
+
+async function dbSaveCust(c){
+  const row = {
+    name: c.n||'', company: c.co||'', dept: c.dept||'',
+    position: c.pos||'', phone: c.ph||'', email: c.em||'',
+    address: c.ad||'', memo: c.mo||''
+  };
+  if(c._dbId){ // 기존 고객 업데이트
+    await sb.from('customers').update(row).eq('id', c._dbId);
+  } else { // 신규 고객 추가
+    const {data, error} = await sb.from('customers').insert(row).select().single();
+    if(data) c._dbId = data.id;
+  }
+}
+
+async function dbDeleteCust(dbId){
+  await sb.from('customers').delete().eq('id', dbId);
+}
+
+async function dbLoadAll(){
+  toast('데이터 불러오는 중...', '');
+  try{
+    // 직원 불러오기
+    const {data:empData} = await sb.from('employees').select('*');
+    if(empData && empData.length){
+      emps = empData.map(e=>({
+        id: e.id, name: e.name, empNo: e.emp_no, email: e.email,
+        dept: e.dept||'', phone: e.phone||'', pw: e.pw||'', isAdmin: e.is_admin,
+        _dbId: e.id
+      }));
+      localStorage.setItem('crv_emps', JSON.stringify(emps));
+    }
+
+    // 고객 불러오기 (DB 우선, 기존 2935명은 유지)
+    const {data:custData} = await sb.from('customers').select('*').order('company');
+    if(custData && custData.length){
+      const dbCusts = custData.map(c=>({
+        id: 100000 + c.id, _dbId: c.id,
+        n: c.name, co: c.company, dept: c.dept,
+        pos: c.position, ph: c.phone, em: c.email,
+        ad: c.address, mo: c.memo
+      }));
+      // 기존 내장 고객(2935명) + DB 고객 합치기 (중복 제거)
+      const dbIds = new Set(dbCusts.map(c=>c._dbId));
+      custs = [...custs.filter(c=>c.id<=2935), ...dbCusts];
+    }
+
+    // 견적 불러오기
+    const {data:qData} = await sb.from('quotes').select('*').order('created_at', {ascending:false});
+    if(qData){
+      qs = qData.map(q=>({
+        id: q.id, cust: q.cust, items: q.items,
+        disc: q.disc, da: q.da, sub: q.sub,
+        sup: q.sup, vat: q.vat, g: q.g,
+        date: q.date, exp: q.exp, note: q.note,
+        by: q.by_name, sender: q.sender||{},
+        prob: q.prob||0, expOrder: q.exp_order||'',
+        finalAmt: q.final_amt||0, orderAmt: q.order_amt||0
+      }));
+    }
+    toast('데이터 로드 완료!', '');
+  }catch(e){
+    console.error('DB 로드 오류:', e);
+    toast('오프라인 모드로 실행 중', 'err');
+  }
+}
+
+
 function load(){
   try{
     const q=localStorage.getItem('crv_qs'); if(q) qs=JSON.parse(q);
     const c=localStorage.getItem('crv_xc'); if(c) JSON.parse(c).forEach(x=>{if(!custs.find(e=>e.id===x.id))custs.push(x);});
-    const p=localStorage.getItem('crv_xp'); if(p) JSON.parse(p).forEach(x=>{if(!prods.find(e=>e.id===x.id))prods.push(x);});
     const r=localStorage.getItem('crv_xr'); if(r){const rr=JSON.parse(r);Object.assign(xr,rr);prods=mkProds();}
+    const em=localStorage.getItem('crv_emps'); if(em) emps=JSON.parse(em);
   }catch(e){}
 }
 
-// 유틸
 function fp(n){return Number(n).toLocaleString('ko-KR')+'원';}
 let _seq = parseInt(localStorage.getItem('crv_seq')||'0');
 function gqn(){
@@ -434,7 +567,8 @@ function startApp(){
   document.getElementById('app-wrap').style.display='block';
   document.getElementById('uname').textContent=cu.name+' 님';
   document.getElementById('uempno').textContent='사번: '+cu.empNo;
-  rPL(); rCL(); rH();
+  // DB에서 최신 데이터 불러오기
+  dbLoadAll().then(()=>{rPL();rCL();rH();});
 }
 
 // ── 고객 목록 (견적작성용) ──
@@ -574,7 +708,7 @@ function createQ(){
   const d=new Date(), exp=new Date(d.getTime()+vd*86400000);
   const fmt=d2=>d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
   const q={id:gqn(),cust:sc,items:cart.map(i=>Object.assign({},i)),disc,da,sub,sup,vat,g,date:fmt(d),exp:fmt(exp),note,by:cu?cu.name:'',sender:cu?{name:cu.name,dept:cu.dept||'',phone:cu.phone||'',email:cu.email||'',empNo:cu.empNo||''}:{}};
-  qs.unshift(q); save(); cart=[]; sc=null;
+  qs.unshift(q); save(); dbSaveQuote(q); cart=[]; sc=null;
   document.getElementById('selbar').style.display='none';
   document.getElementById('disc').value=0;
   document.getElementById('note').value='';
@@ -663,23 +797,153 @@ function prtQ(){window.print();}
 function savePDF(){window.print();}
 
 // ── 견적 이력 ──
-function rH(){
-  document.getElementById('hcount').textContent='총 '+qs.length+'건';
-  document.getElementById('qlist').innerHTML=qs.length
-    ? qs.map(q=>`<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;margin-bottom:8px;">
-        <div>
-          <div style="font-weight:700;font-size:13px;">${q.id}</div>
-          <div style="font-size:12px;color:#555;margin-top:3px;">${q.cust.co||q.cust.n} · ${q.items.length}개 품목 · ${fp(q.g)}</div>
-          <div style="font-size:11px;color:#aaa;margin-top:2px;">${q.date} · ${q.by||''}</div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button class="bg" onclick="openM('${q.id}')">보기</button>
-          <button class="bd" onclick="delQ('${q.id}')">삭제</button>
-        </div>
-      </div>`).join('')
-    : '<div class="empty">견적 이력이 없습니다.</div>';
+function resetHFilter(){
+  ['hdf','hdt'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('hsort').value='date_desc';
+  document.getElementById('hfilter').value='all';
+  rH();
 }
-function delQ(id){if(!confirm('삭제하시겠습니까?'))return;qs=qs.filter(q=>q.id!==id);save();rH();toast('삭제됨','err');}
+
+function rH(){
+  const df=document.getElementById('hdf')?.value||'';
+  const dt=document.getElementById('hdt')?.value||'';
+  const sort=document.getElementById('hsort')?.value||'date_desc';
+  const filter=document.getElementById('hfilter')?.value||'all';
+
+  let list=[...qs];
+  if(df) list=list.filter(q=>q.date>=df);
+  if(dt) list=list.filter(q=>q.date<=dt);
+  if(filter==='ordered') list=list.filter(q=>q.orderAmt>0);
+  if(filter==='pending') list=list.filter(q=>!q.orderAmt||q.orderAmt===0);
+  list.sort((a,b)=>{
+    if(sort==='date_asc') return a.date.localeCompare(b.date);
+    if(sort==='g_desc') return (b.g||0)-(a.g||0);
+    if(sort==='g_asc') return (a.g||0)-(b.g||0);
+    if(sort==='prob_desc') return (b.prob||0)-(a.prob||0);
+    if(sort==='order_desc') return (b.orderAmt||0)-(a.orderAmt||0);
+    return b.date.localeCompare(a.date);
+  });
+
+  const ordered=list.filter(q=>q.orderAmt>0);
+  const totalOAmt=ordered.reduce((s,q)=>s+(q.orderAmt||0),0);
+  const totalQAmt=list.reduce((s,q)=>s+(q.g||0),0);
+  const avgProb=list.length?Math.round(list.reduce((s,q)=>s+(q.prob||0),0)/list.length):0;
+  document.getElementById('hcount').textContent='총 '+list.length+'건';
+  document.getElementById('hstats').innerHTML=
+    stat('견적 건수', list.length+'건', '#1a3a6e')+
+    stat('총 견적금액', fp(totalQAmt), '#1a3a6e')+
+    stat('발주완료', ordered.length+'건', '#22c55e')+
+    stat('총 발주금액', fp(totalOAmt), '#22c55e')+
+    stat('평균 발주확률', avgProb+'%', '#f59e0b');
+
+  if(!list.length){document.getElementById('qlist').innerHTML='<div class="empty">견적 이력이 없습니다.</div>';return;}
+
+  // DOM으로 테이블 생성 (따옴표 문제 완전 회피)
+  const table=document.createElement('table');
+  table.style.cssText='width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);';
+  table.innerHTML='<thead><tr style="background:#1a3a6e;color:#fff;font-size:12px;">'
+    +'<th style="padding:10px 8px;text-align:left;">발행일</th>'
+    +'<th style="padding:10px 8px;text-align:left;">견적번호</th>'
+    +'<th style="padding:10px 8px;text-align:left;">고객정보</th>'
+    +'<th style="padding:10px 8px;text-align:left;">장비모델/수량</th>'
+    +'<th style="padding:10px 8px;text-align:right;">견적금액</th>'
+    +'<th style="padding:10px 8px;text-align:center;">발주확률</th>'
+    +'<th style="padding:10px 8px;text-align:center;">예상발주일</th>'
+    +'<th style="padding:10px 8px;text-align:right;">최종견적금액</th>'
+    +'<th style="padding:10px 8px;text-align:right;">발주금액</th>'
+    +'<th style="padding:10px 8px;text-align:center;">상태</th>'
+    +'</tr></thead>';
+
+  const tbody=document.createElement('tbody');
+  list.forEach(function(q){
+    const tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid #f0f2f5';
+    const models=q.items.map(function(i){return i.name;}).join(', ');
+    const qtys=q.items.map(function(i){return i.qty;}).join(', ');
+    const prob=q.prob||0;
+    const pc=!prob?'#aaa':prob>=70?'#22c55e':prob>=40?'#f59e0b':'#ef4444';
+
+    // 각 셀을 DOM으로 생성
+    function mkTd(style,html){const td=document.createElement('td');td.style.cssText=style;td.innerHTML=html;return td;}
+    function mkInput(type,val,field,extraStyle){
+      const inp=document.createElement('input');
+      inp.type=type; inp.value=val||'';
+      inp.dataset.qid=q.id; inp.dataset.field=field;
+      inp.onchange=function(){updQF(this);};
+      inp.style.cssText='border:1px solid #d0d5de;border-radius:5px;font-size:12px;padding:3px 5px;'+(extraStyle||'');
+      return inp;
+    }
+
+    tr.appendChild(mkTd('padding:10px 8px;color:#888;white-space:nowrap;',q.date));
+    tr.appendChild(mkTd('padding:10px 8px;font-weight:700;font-size:11px;',q.id));
+    tr.appendChild(mkTd('padding:10px 8px;','<div style="font-weight:700;">'+(q.cust.co||q.cust.n||'')+'</div><div style="font-size:11px;color:#888;">'+(q.cust.n||'')+' '+(q.cust.ph||'')+'</div>'));
+    tr.appendChild(mkTd('padding:10px 8px;max-width:160px;','<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+models+'</div><div style="font-size:11px;color:#888;">수량: '+qtys+'</div>'));
+    tr.appendChild(mkTd('padding:10px 8px;text-align:right;font-weight:700;color:#1a3a6e;white-space:nowrap;',fp(q.g)));
+
+    // 발주확률
+    const probTd=document.createElement('td'); probTd.style.cssText='padding:10px 8px;text-align:center;';
+    const probWrap=document.createElement('div'); probWrap.style.cssText='display:flex;align-items:center;gap:3px;justify-content:center;';
+    const probInp=mkInput('number',prob,'prob','width:55px;text-align:center;');
+    probInp.min=0; probInp.max=100;
+    const probSpan=document.createElement('span'); probSpan.style.cssText='color:'+pc+';font-weight:700;'; probSpan.textContent='%';
+    probWrap.appendChild(probInp); probWrap.appendChild(probSpan); probTd.appendChild(probWrap); tr.appendChild(probTd);
+
+    // 예상발주일
+    const dateTd=document.createElement('td'); dateTd.style.cssText='padding:10px 8px;text-align:center;';
+    const dateInp=mkInput('date',q.expOrder||'','expOrder','width:118px;');
+    dateTd.appendChild(dateInp); tr.appendChild(dateTd);
+
+    // 최종견적금액
+    const faTd=document.createElement('td'); faTd.style.cssText='padding:10px 8px;text-align:right;';
+    const faInp=mkInput('number',q.finalAmt||q.g||'','finalAmt','width:105px;text-align:right;');
+    faTd.appendChild(faInp); tr.appendChild(faTd);
+
+    // 발주금액
+    const oaTd=document.createElement('td'); oaTd.style.cssText='padding:10px 8px;text-align:right;';
+    const oaInp=mkInput('number',q.orderAmt||'','orderAmt','width:105px;text-align:right;');
+    oaInp.placeholder='발주시입력';
+    oaTd.appendChild(oaInp); tr.appendChild(oaTd);
+
+    // 상태+버튼
+    const stTd=document.createElement('td'); stTd.style.cssText='padding:10px 8px;text-align:center;white-space:nowrap;';
+    stTd.innerHTML=q.orderAmt>0
+      ?'<span style="background:#dcfce7;color:#16a34a;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;">발주완료</span>'
+      :'<span style="background:#f0f4fb;color:#1a3a6e;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;">진행중</span>';
+    const btnWrap=document.createElement('div'); btnWrap.style.cssText='display:flex;gap:4px;justify-content:center;margin-top:5px;';
+    const viewBtn=document.createElement('button'); viewBtn.className='bg'; viewBtn.style.cssText='padding:3px 8px;font-size:11px;'; viewBtn.textContent='보기';
+    viewBtn.onclick=function(){openM(q.id);};
+    const delBtn=document.createElement('button'); delBtn.className='bd'; delBtn.style.cssText='padding:3px 8px;font-size:11px;'; delBtn.textContent='삭제';
+    delBtn.onclick=function(){delQ(q.id);};
+    btnWrap.appendChild(viewBtn); btnWrap.appendChild(delBtn); stTd.appendChild(btnWrap); tr.appendChild(stTd);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  const qlist=document.getElementById('qlist');
+  qlist.innerHTML=''; qlist.appendChild(table);
+}
+
+function stat(label,val,color){
+  return '<div class="card" style="padding:12px 16px;text-align:center;"><div style="font-size:11px;color:#888;margin-bottom:4px;">'+label+'</div><div style="font-size:20px;font-weight:900;color:'+color+';">'+val+'</div></div>';
+}
+
+
+function updQF(el){
+  const qid=el.dataset.qid, field=el.dataset.field;
+  const val=field==='expOrder'?el.value:(parseInt(el.value)||0);
+  const q=qs.find(x=>x.id===qid);
+  if(!q) return;
+  q[field]=val;
+  save();
+  const update={};
+  if(field==='prob') update.prob=val;
+  if(field==='expOrder') update.exp_order=val;
+  if(field==='finalAmt') update.final_amt=val;
+  if(field==='orderAmt') update.order_amt=val;
+  sb.from('quotes').update(update).eq('id',qid).then(()=>{});
+}
+
+
+function delQ(id){if(!confirm('삭제하시겠습니까?'))return;qs=qs.filter(q=>q.id!==id);save();dbDeleteQuote(id);rH();toast('삭제됨','err');}
 
 // ── 고객 목록 탭 ──
 function updCC(){const el=document.getElementById('ccount');if(el)el.textContent=custs.length.toLocaleString()+'명';}
@@ -741,9 +1005,15 @@ function saveC(){
   const c={n,co:document.getElementById('fc').value,dept:document.getElementById('fdept').value,pos:document.getElementById('fpos').value,ph,em:document.getElementById('fe').value,ad:document.getElementById('fa').value,mo:document.getElementById('fm').value};
   if(ei!==null){c.id=custs[ei].id;custs[ei]=c;toast('수정되었습니다.');}
   else{c.id=Date.now();custs.push(c);toast('등록되었습니다.');}
-  closeCF(); save(); updCC(); rCL(); rCC();
+  closeCF(); save(); dbSaveCust(c); updCC(); rCL(); rCC();
 }
-function delCust(id){if(!confirm('삭제하시겠습니까?'))return;custs=custs.filter(c=>c.id!==id);save();updCC();rCC();toast('삭제됨','err');}
+function delCust(id){
+  if(!confirm('삭제하시겠습니까?'))return;
+  const c=custs.find(x=>x.id===id);
+  if(c&&c._dbId) dbDeleteCust(c._dbId);
+  custs=custs.filter(c=>c.id!==id);
+  save();updCC();rCC();toast('삭제됨','err');
+}
 function gwC(id){sc=custs.find(c=>c.id===id);document.getElementById('selbar').style.display='block';document.getElementById('scn').textContent=sc.co||sc.n;document.getElementById('sci').textContent=(sc.dept?sc.dept+' ':'')+sc.n+' '+sc.ph;gTab('q');toast(sc.co||sc.n+' 선택됨');}
 
 // ── 장비 관리 탭 ──
@@ -841,8 +1111,12 @@ function saveEF(){
   const dept=document.getElementById('efd').value.trim(), phone=document.getElementById('efph').value.trim();
   if(!name||!empNo||!email){toast('이름, 사번, 이메일은 필수입니다.','err');return;}
   if(emps.find(e=>e.email.toLowerCase()===email.toLowerCase())){toast('이미 등록된 이메일입니다.','err');return;}
-  emps.push({id:Date.now(),name,empNo,email,dept,phone,pw:'',isAdmin});
-  saveEmps(); toast(name+' 추가되었습니다.'); closeEF(); rEL();
+  const newEmp={id:Date.now(),name,empNo,email,dept,phone,pw:'',isAdmin};
+  emps.push(newEmp);
+  saveEmps();
+  sb.from('employees').insert({
+    name,emp_no:empNo,email,dept:dept||'',phone:phone||'',pw:'',is_admin:isAdmin
+  }).then(({data})=>{if(data&&data[0])newEmp._dbId=data[0].id;}); toast(name+' 추가되었습니다.'); closeEF(); rEL();
 }
 function delEmp(i){if(!confirm(emps[i].name+' 삭제?'))return;emps.splice(i,1);saveEmps();rEL();toast('삭제됨','err');}
 function resetPW(i){if(!confirm(emps[i].name+' 비밀번호를 초기화하시겠습니까?'))return;emps[i].pw='';saveEmps();rEL();toast('초기화됨');}
