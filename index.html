@@ -1159,82 +1159,202 @@ function generateOS(q) {
   if(!q) return;
 
   const today = new Date();
-  const fmtDate = d => {
-    if(!d) return today;
-    const dt = typeof d === 'string' ? new Date(d) : d;
-    return isNaN(dt) ? today : dt;
+  const fmtD = d => {
+    if(!d) return '';
+    const dt = typeof d==='string'?new Date(d):d;
+    if(isNaN(dt)) return d;
+    return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
   };
-  // Excel serial date (openpyxl과 동일한 방식)
-  const toExcelDate = d => {
-    const dt = fmtDate(d);
-    const base = new Date(1899, 11, 30);
-    return Math.round((dt - base) / 86400000);
-  };
+  const num = n => Number(n||0).toLocaleString('ko-KR');
 
-  const sender = q.sender || {};
-  const cust = q.cust || {};
-  const items = q.items || [];
+  const sender = q.sender||{};
+  const cust = q.cust||{};
+  const items = q.items||[];
   const totalQty = items.reduce((s,i)=>s+(i.qty||1),0);
-  const finalAmt = q.finalAmt || q.g || 0;
-  const orderAmt = q.orderAmt || finalAmt;
-  const initAmt = q.g || 0;
+  const finalAmt = q.finalAmt||q.g||0;
+  const orderAmt = q.orderAmt||finalAmt;
+  const initAmt = q.g||0;
+  const discRate = initAmt>0?Math.round((1-finalAmt/initAmt)*10000)/100:0;
+  const xr = 1493.3; // 환율 기본값
 
-  // base64 → Uint8Array
-  const bin = atob(OS_TEMPLATE_B64);
-  const buf = new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  const td = (content, style='') =>
+    `<td style="border:1px solid #999;padding:4px 6px;font-size:11px;${style}">${content}</td>`;
+  const th = (content, style='') =>
+    `<td style="border:1px solid #999;padding:4px 6px;font-size:11px;font-weight:bold;background:#f2f2f2;${style}">${content}</td>`;
 
-  // 워크북 로드 (스타일 완전 보존)
-  const wb = XLSX.read(buf, {
-    type: 'array',
-    cellStyles: true,
-    cellFormulas: true,
-    cellDates: true,
-    dateNF: 'yyyy-mm-dd'
-  });
-  const ws = wb.Sheets['OS'];
+  const osHtml = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"/>
+<style>
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:11px;margin:20px;}
+  table{border-collapse:collapse;width:100%;}
+  td{border:1px solid #999;padding:4px 6px;font-size:11px;}
+  .title{font-size:16px;font-weight:bold;text-align:center;}
+  .hdr{font-weight:bold;background:#f2f2f2;}
+  .orange{background:#FCE8D0;}
+  .yellow{background:#FFFF99;}
+  .red{color:#FF0000;font-weight:bold;}
+  .blue{color:#0000FF;}
+  .bold{font-weight:bold;}
+  @media print{body{margin:5mm;} button{display:none;}}
+</style></head>
+<body>
+<button onclick="window.print()" style="margin-bottom:10px;padding:6px 16px;background:#1a3a6e;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:13px;">🖨️ 인쇄/PDF저장</button>
+<button onclick="window.close()" style="margin-bottom:10px;margin-left:8px;padding:6px 16px;background:#888;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:13px;">닫기</button>
 
-  // 값만 교체 (스타일/서식 건드리지 않음)
-  function setNum(addr, val) {
-    if(ws[addr]) { ws[addr].v = val; ws[addr].t = 'n'; delete ws[addr].w; }
-  }
-  function setStr(addr, val) {
-    if(ws[addr]) { ws[addr].v = val; ws[addr].t = 's'; delete ws[addr].w; }
-    else ws[addr] = {t:'s', v:val};
-  }
-  function setDate(addr, d) {
-    const dt = fmtDate(d);
-    if(ws[addr]) {
-      ws[addr].v = toExcelDate(dt);
-      ws[addr].t = 'n';
-      ws[addr].z = ws[addr].z || 'yyyy-m-d';
-      delete ws[addr].w;
-    }
-  }
+<table>
+  <tr>
+    <td colspan="5" class="title">ORDER SHEET</td>
+    <td colspan="2" class="hdr" style="text-align:center;">JOB No.</td>
+    <td colspan="3">${q.id||''}</td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="2">담당자</td>
+    <td colspan="2" rowspan="2">${sender.name||q.by||''}</td>
+    <td class="hdr">부서</td>
+    <td colspan="2">${sender.dept||''}</td>
+    <td class="hdr">Model</td>
+    <td colspan="3">${items.map(i=>i.name).join(', ')}</td>
+  </tr>
+  <tr>
+    <td></td><td></td><td></td><td></td><td colspan="3"></td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="2">작성일</td>
+    <td colspan="2" rowspan="2">${fmtD(today)}</td>
+    <td class="hdr">Principal</td>
+    <td colspan="2">TSI</td>
+    <td class="hdr">첨부서류</td>
+    <td colspan="3">견적서,발주서,PO</td>
+  </tr>
+  <tr><td></td><td></td><td></td><td></td><td colspan="3"></td></tr>
+  <tr>
+    <td class="hdr" rowspan="2">고객사</td>
+    <td colspan="2" rowspan="2">${cust.co||cust.n||''}</td>
+    <td class="hdr">고객명</td>
+    <td colspan="2">${(cust.n||'')+' '+(cust.pos||'')}</td>
+    <td class="hdr">수량</td>
+    <td colspan="3">${totalQty} SET</td>
+  </tr>
+  <tr><td></td><td></td><td></td><td></td><td colspan="3"></td></tr>
+  <tr>
+    <td colspan="3" class="hdr" style="text-align:center;">구 분</td>
+    <td class="hdr" style="text-align:center;">환율(T/TS)</td>
+    <td style="text-align:right;">${xr.toLocaleString()}</td>
+    <td></td>
+    <td colspan="4" class="red" style="text-align:center;">추가비용</td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="2">견적</td>
+    <td colspan="2">초기견적금액</td>
+    <td colspan="2" style="text-align:right;">₩${num(initAmt)}</td>
+    <td>할인율</td>
+    <td class="hdr">관세</td>
+    <td></td>
+    <td colspan="2" style="text-align:right;">₩0</td>
+  </tr>
+  <tr>
+    <td colspan="2" class="bold">최종견적금액</td>
+    <td colspan="2" style="text-align:right;">₩${num(finalAmt)}</td>
+    <td style="text-align:right;">${discRate}%</td>
+    <td class="hdr">운송비</td>
+    <td></td>
+    <td colspan="2" style="text-align:right;">₩500,000</td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="2">발주</td>
+    <td colspan="2" class="bold blue">1. 발주금액</td>
+    <td colspan="3" class="bold" style="text-align:right;">₩${num(orderAmt)}</td>
+    <td class="hdr">Adapter</td>
+    <td></td>
+    <td colspan="2" style="text-align:right;">₩240,000</td>
+  </tr>
+  <tr>
+    <td colspan="2">발주일</td>
+    <td colspan="3" style="text-align:right;">${fmtD(q.expOrder||today)}</td>
+    <td class="hdr">프로브&amp;마운트</td>
+    <td></td>
+    <td colspan="2" style="text-align:right;">₩960,000</td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="2">선적</td>
+    <td colspan="2">예상 선적일</td>
+    <td colspan="3" style="text-align:right;"></td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td colspan="2">예상 납품일</td>
+    <td colspan="3" style="text-align:right;"></td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td class="hdr" rowspan="4">Commission</td>
+    <td colspan="2">원가(외화)</td>
+    <td colspan="3" style="text-align:right;"></td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td colspan="2" class="bold blue">2. 원가(원화)</td>
+    <td colspan="3" class="bold" style="text-align:right;"></td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td colspan="2" class="bold blue">3. 추가비용</td>
+    <td colspan="3" class="bold" style="text-align:right;">₩1,700,000</td>
+    <td colspan="4"></td>
+  </tr>
+  <tr>
+    <td colspan="2" class="red">영업이익(1-2-3)</td>
+    <td colspan="2" class="red" style="text-align:right;"></td>
+    <td class="red" style="text-align:right;"></td>
+    <td class="hdr">Total</td>
+    <td></td>
+    <td colspan="2" style="text-align:right;">₩1,700,000</td>
+  </tr>
+  <!-- 수금 섹션 -->
+  <tr class="orange">
+    <td class="hdr" rowspan="4" style="background:#FCE8D0;">수금</td>
+    <td class="hdr" rowspan="4" style="background:#FCE8D0;">현금</td>
+    <td class="hdr" style="background:#FCE8D0;">세금계산서 발행(예정)일</td>
+    <td colspan="2" class="hdr" style="background:#FCE8D0;">수금(예정)일</td>
+    <td colspan="2" class="hdr" style="background:#FCE8D0;">금액</td>
+    <td colspan="3">비고(어음 및 채권)</td>
+  </tr>
+  <tr class="orange">
+    <td style="background:#FCE8D0;">선수금</td>
+    <td colspan="2" style="background:#FCE8D0;">선수금</td>
+    <td colspan="2" style="background:#FCE8D0;">선수금</td>
+    <td colspan="3">기준:</td>
+  </tr>
+  <tr class="orange">
+    <td style="background:#FCE8D0;">중도금</td>
+    <td colspan="2" style="background:#FCE8D0;">중도금</td>
+    <td colspan="2" style="background:#FCE8D0;">중도금</td>
+    <td colspan="3">어음발행:</td>
+  </tr>
+  <tr class="orange">
+    <td style="background:#FCE8D0;">잔금</td>
+    <td colspan="2" style="background:#FCE8D0;">${fmtD(today)}</td>
+    <td style="background:#FCE8D0;">잔금</td>
+    <td style="background:#FCE8D0;text-align:right;">₩${num(orderAmt)}</td>
+    <td colspan="3">어음만기:</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="hdr" style="writing-mode:vertical-lr;text-align:center;">어음및채권</td>
+    <td class="hdr">세금계산서 발행(예정)일</td>
+    <td colspan="2" class="hdr">어음 및 채권 발행(예정)일</td>
+    <td colspan="2" class="hdr">어음 및 채권 만기(예정)일</td>
+    <td colspan="3" class="hdr">금액</td>
+  </tr>
+  <tr><td></td><td></td><td>선수금</td><td colspan="2">선수금</td><td colspan="2">선수금</td><td colspan="3">선수금</td></tr>
+  <tr><td></td><td></td><td>중도금</td><td colspan="2">중도금</td><td colspan="2">중도금</td><td colspan="3">중도금</td></tr>
+  <tr><td></td><td></td><td>잔금</td><td colspan="2">잔금</td><td colspan="2">잔금</td><td colspan="3">잔금</td></tr>
+</table>
+</body></html>`;
 
-  // 값 입력 (원본 서식 그대로 유지)
-  setStr('I1', q.id || '');
-  setStr('B3', (sender.name||q.by||'') + (sender.dept ? ' ' + sender.dept : ''));
-  setDate('B5', today);
-  setStr('I3', items.map(i=>i.name).join(', '));
-  setStr('B7', cust.co || cust.n || '');
-  setStr('E7', (cust.n||'') + (cust.pos ? ' ' + cust.pos : ''));
-  setStr('I7', totalQty + ' SET');
-  setNum('E11', initAmt);
-  setNum('E12', finalAmt);
-  setNum('E13', orderAmt);
-  setDate('E14', q.expOrder ? new Date(q.expOrder) : today);
-  setNum('H24', orderAmt);
-
-  // 파일명
-  const custName = (cust.co || cust.n || '').replace(/[\/:*?"<>|]/g,'');
-  const model = items.map(i=>i.name).join('_').replace(/[\/:*?"<>|]/g,'');
-  const d = today;
-  const dateStr = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
-  const fileName = 'OS_' + custName + '_' + model + '_' + dateStr + '.xlsx';
-
-  XLSX.writeFile(wb, fileName, {cellStyles: true, type: 'binary'});
-  toast('OS 파일 생성 완료! 📥');
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(osHtml);
+  win.document.close();
 }
 
 
