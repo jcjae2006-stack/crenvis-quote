@@ -851,6 +851,7 @@ function rH(){
     +'<th style="padding:10px 8px;text-align:center;white-space:nowrap;">발주확률</th>'
     +'<th style="padding:10px 8px;text-align:center;white-space:nowrap;">예상발주일</th>'
     +'<th style="padding:10px 8px;text-align:right;white-space:nowrap;">발주금액</th>'
+    +'<th style="padding:10px 8px;text-align:center;white-space:nowrap;">담당자</th>'
     +'<th style="padding:10px 8px;text-align:center;">상태</th>'
     +'</tr></thead>';
 
@@ -908,6 +909,11 @@ function rH(){
     const oaInp=mkInput('number',q.orderAmt||'','orderAmt','width:105px;text-align:right;');
     oaInp.placeholder='발주시입력';
     oaTd.appendChild(oaInp); tr.appendChild(oaTd);
+
+    // 담당자
+    const byTd=document.createElement('td'); byTd.style.cssText='padding:10px 8px;text-align:center;white-space:nowrap;font-size:12px;';
+    byTd.textContent=q.by||q.sender?.name||'';
+    tr.appendChild(byTd);
 
     // 상태 select
     const stTd=document.createElement('td'); stTd.style.cssText='padding:10px 8px;text-align:center;';
